@@ -1,0 +1,145 @@
+.app-download-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #111, #0a0a0c);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 40px;
+  margin: 60px 0;
+  gap: 40px;
+  box-shadow: 0 10px 40px rgba(229, 9, 20, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-download-content {
+  flex: 1;
+  max-width: 500px;
+  z-index: 2;
+}
+
+.app-download-content h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+.app-download-content p {
+  font-size: 1.1rem;
+  color: #9ba1a6;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.app-download-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.store-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #000;
+  border: 1px solid #333;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.store-btn:hover {
+  background: #151518;
+  border-color: #666;
+  transform: translateY(-2px);
+}
+
+.store-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.store-text span {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #aaa;
+}
+
+.store-text strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.app-mockup {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.phone-frame {
+  width: 240px;
+  height: 480px;
+  border: 8px solid #222;
+  border-radius: 36px;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+  box-shadow: -10px 10px 30px rgba(0,0,0,0.5);
+  transform: rotate(-5deg);
+  transition: transform 0.3s ease;
+}
+
+.phone-frame:hover {
+  transform: rotate(0deg) translateY(-10px);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #e50914 0%, #0a0a0c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-logo {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+/* Background flare */
+.app-download-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(229,9,20,0.15) 0%, rgba(0,0,0,0) 70%);
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .app-download-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 30px 20px;
+  }
+  
+  .app-download-buttons {
+    justify-content: center;
+  }
+  
+  .app-mockup {
+    justify-content: center;
+    margin-top: 20px;
+  }
+}

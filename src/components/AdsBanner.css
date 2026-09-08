@@ -1,0 +1,70 @@
+﻿/* ── Ads Banner ──────────────────────────────────────────────── */
+.ads-banner {
+  background: rgba(10,10,18,0.85);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ads-banner-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.25);
+  padding: 6px 12px 4px;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.ads-media-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+
+.ads-media-wrap.clickable { cursor: pointer; }
+.ads-media-wrap.clickable:hover .ads-media { opacity: 0.9; transform: scale(1.02); }
+
+.ads-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.ads-title-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 16px 10px 8px;
+}
+
+.ads-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+}
+
+.ads-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.ads-dot.active {
+  background: var(--accent, #e50914);
+  transform: scale(1.3);
+}

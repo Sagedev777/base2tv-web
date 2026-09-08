@@ -1,0 +1,19 @@
+﻿RewriteEngine On
+
+# ── Proxy API calls to Node.js ────────────────────────────────
+RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]
+
+# ── Serve uploaded files directly ────────────────────────────
+RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+
+# ── Block sensitive files ─────────────────────────────────────
+<FilesMatch "\.(env|sql|sh|log)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# ── SPA routing — serve index.html for ALL routes ─────────────
+# This is what makes /admin, /admin/*, and all React routes work
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]

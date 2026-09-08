@@ -1,0 +1,21 @@
+﻿User-agent: *
+Allow: /
+
+# Block admin and API from indexing
+Disallow: /admin
+Disallow: /api/
+Disallow: /uploads/
+
+# Allow important assets
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.svg$
+Allow: /*.webp$
+
+# Sitemap location
+Sitemap: https://base2tv.ug/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 2

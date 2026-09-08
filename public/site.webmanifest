@@ -1,0 +1,28 @@
+﻿{
+  "name": "Base2 TV Uganda",
+  "short_name": "Base2 TV",
+  "description": "Watch Base2 TV live — The Voice of Uganda, broadcasting 24/7.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#e50914",
+  "background_color": "#0d0d11",
+  "icons": [
+    {
+      "src": "/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
