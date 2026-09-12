@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { authAPI, getToken, getUser, setToken, setUser, removeToken, removeUser } from '../services/api';
 import AdminSchedule  from './pages/AdminSchedule';
 import AdminNews      from './pages/AdminNews';
@@ -6,6 +6,7 @@ import AdminFeatured  from './pages/AdminFeatured';
 import AdminVideos    from './pages/AdminVideos';
 import AdminContacts  from './pages/AdminContacts';
 import AdminUsers     from './pages/AdminUsers';
+import AdminChatLogs  from './pages/AdminChatLogs';
 import AdminSettings  from './pages/AdminSettings';
 import AdminAds       from './pages/AdminAds';
 import AdminCareers   from './pages/AdminCareers';
@@ -14,7 +15,7 @@ import './admin.css';
 
 import {
   LayoutDashboard, CalendarDays, Newspaper, Star,
-  Video, Mail, Users, LogOut, Tv, Menu, X, Settings,
+  Video, Mail, Users, LogOut, Tv, Menu, X, Settings, MessageSquare,
 } from 'lucide-react';
 
 const NAV = [
@@ -23,6 +24,7 @@ const NAV = [
   { key: 'featured',  label: 'Featured',     icon: Star         },
   { key: 'videos',    label: 'VOD / Videos', icon: Video        },
   { key: 'contacts',  label: 'Inbox',        icon: Mail         },
+  { key: 'chatlogs',  label: 'Chat Logs',    icon: MessageSquare },
   { key: 'users',     label: 'Users',        icon: Users        },
   { key: 'settings',  label: 'Site Labels',   icon: Settings     },
   { key: 'ads',       label: 'Adverts',       icon: LayoutDashboard },
@@ -102,6 +104,7 @@ export default function AdminApp() {
     contacts: AdminContacts,
     users:    AdminUsers,
     settings:  AdminSettings,
+    chatlogs: AdminChatLogs,
     ads:       AdminAds,
     careers:   AdminCareers,
     advertise: AdminAdvertise,

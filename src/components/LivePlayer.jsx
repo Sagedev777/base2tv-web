@@ -38,7 +38,7 @@ const LivePlayer = () => {
       }
     };
     detect();
-    const i = setInterval(detect, 60000);
+    const i = setInterval(detect, 300000) // 5 min;
     return () => clearInterval(i);
   }, []);
 

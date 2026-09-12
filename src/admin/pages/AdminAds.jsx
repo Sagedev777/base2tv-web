@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
-import { adsAPI, uploadAPI } from "../../services/api";
+import { adsAPI } from "../../services/api";
 import { Plus, Pencil, Trash2, Save, X, Upload } from "lucide-react";
 
 const POSITIONS = ["sidebar","below-chat","banner","all"];
@@ -12,7 +12,7 @@ export default function AdminAds() {
   const [saving,  setSaving]  = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error,   setError]   = useState("");
-  const fileRef = useRef();
+
 
   const load = async () => {
     setLoading(true);
@@ -79,24 +79,13 @@ export default function AdminAds() {
               <input type="text" value={form.title} onChange={e=>set("title",e.target.value)} maxLength={200}/>
             </label>
 
-            <label>Upload Media (image or video)
-              <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                <input type="url" placeholder="Or paste a URL..." value={form.media_url}
-                  onChange={e=>set("media_url",e.target.value)} style={{flex:1}}/>
-                <button type="button" className="adm-btn-ghost" onClick={()=>fileRef.current?.click()} disabled={uploading}>
-                  <Upload size={14}/> {uploading ? "Uploading..." : "Upload"}
-                </button>
-                <input ref={fileRef} type="file" accept="image/*,video/*" style={{display:"none"}} onChange={handleUpload}/>
-              </div>
-              {form.media_url && (
-                <div style={{marginTop:8}}>
-                  {form.media_type==="video"
-                    ? <video src={form.media_url} style={{maxHeight:100,borderRadius:6}} controls/>
-                    : <img src={form.media_url} style={{maxHeight:100,borderRadius:6,objectFit:"cover"}} alt="preview"/>
-                  }
-                </div>
-              )}
-            </label>
+            <ImageUpload
+              label="Ad Media (image or video)"
+              value={form.media_url}
+              onChange={url => { set("media_url", url); set("media_type", url.match(/\.(mp4|webm|ogg|mov)$/i) ? "video" : "image"); }}
+              accept="image/*,video/*"
+              type="ad"
+            />
 
             <div className="adm-form-2col">
               <label>Media Type
@@ -112,8 +101,8 @@ export default function AdminAds() {
               </label>
             </div>
 
-            <label>Click-through URL (optional)
-              <input type="url" placeholder="https://..." value={form.link_url} onChange={e=>set("link_url",e.target.value)}/>
+            <label>Click URL (where clicking the ad goes — optional)
+              <input type="text" placeholder="https://..." value={form.link_url} onChange={e=>set("link_url",e.target.value)}/>
             </label>
 
             <div className="adm-form-2col">

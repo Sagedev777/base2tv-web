@@ -106,7 +106,7 @@ const Footer = () => {
         {/* Brand */}
         <div className="footer-brand">
           <img src="/logo.png" alt="Base2 TV Logo" className="footer-logo" />
-          <p className="footer-tagline">Bamufuna Mpola.<br />Telefunkeni ya Bamufuna Mpola.</p>
+          <p className="footer-tagline">Bamufuna Mpola.<br />Telefwunkeni ya Bamufuna Mpola.</p>
           <p className="footer-contact">Hotline: +256 744 253 208</p>
 
           {/* Social icons */}

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import './AppDownloadBanner.css';
 
 export default function AppDownloadBanner() {
@@ -39,7 +39,7 @@ export default function AppDownloadBanner() {
         {/* Placeholder for phone mockup graphic */}
         <div className="phone-frame">
           <div className="phone-screen">
-            <span className="phone-logo">Base2 TV</span>
+            <span className="phone-logo">Base2<br/>Telefwunkeni</span>
           </div>
         </div>
       </div>

@@ -3,11 +3,15 @@ import { Send, Users, X, ChevronRight, Reply, CornerUpLeft } from 'lucide-react'
 import { scheduleAPI, chatAPI, authAPI, getToken, setToken, setUser, getUser, removeToken, removeUser } from '../services/api';
 import './LiveChat.css';
 
-// ── Viewer count simulation (stays client-side — feels live) ──
-const randomViewerBase = () => Math.floor(Math.random() * (3500 - 800 + 1)) + 800;
-const nudgeViewers = (n) => {
-  const delta = n * (Math.random() * 0.08 - 0.04);
-  return Math.max(200, Math.min(8000, Math.round(n + delta)));
+// ── Viewer count simulation ──
+// Starts small (3-15) and grows naturally when a show begins
+const randomViewerBase = () => Math.floor(Math.random() * 12) + 3; // 3-15 to feel real
+const nudgeViewers = (n, target) => {
+  // Gradually grow toward target, small random drift
+  const drift = n < target
+    ? Math.round(n * (Math.random() * 0.12 + 0.03))  // grow faster when small
+    : Math.round(n * (Math.random() * 0.04 - 0.02));  // small drift when large
+  return Math.max(1, Math.min(8000, n + drift));
 };
 
 const LiveChat = () => {
@@ -53,15 +57,19 @@ const LiveChat = () => {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // ── Viewer simulation ───────────────────────────────────────
-  const startViewerSim = useCallback((base) => {
+  // ── Viewer simulation — starts tiny, grows organically ────
+  const startViewerSim = useCallback(() => {
     if (viewerTimerRef.current) clearTimeout(viewerTimerRef.current);
-    let cur = base;
+    // Start tiny (3-15), target is a realistic peak for the show
+    const target = Math.floor(Math.random() * (3000 - 400 + 1)) + 400;
+    let cur = randomViewerBase(); // 3-15
     setViewerCount(cur);
     const tick = () => {
-      const delay = Math.floor(Math.random() * 8000) + 2000;
+      const delay = cur < 50
+        ? Math.floor(Math.random() * 3000) + 1000   // faster growth at start
+        : Math.floor(Math.random() * 8000) + 3000;  // slower when established
       viewerTimerRef.current = setTimeout(() => {
-        cur = nudgeViewers(cur);
+        cur = nudgeViewers(cur, target);
         setViewerCount(cur);
         tick();
       }, delay);
@@ -116,7 +124,7 @@ const LiveChat = () => {
         }));
         setMessages(normalised);
       } catch { /* silent */ }
-    }, 8000);
+    }, 30000); // 30s polling — reduces server load
   }, []);
 
   useEffect(() => () => {
@@ -151,7 +159,7 @@ const LiveChat = () => {
       }
     };
     detect();
-    const interval = setInterval(detect, 60000);
+    const interval = setInterval(detect, 300000) // 5 min — show changes rarely;
     return () => clearInterval(interval);
   }, [loadMessages, startPolling, startViewerSim]);
 
@@ -209,7 +217,7 @@ const LiveChat = () => {
   // ── Send message ─────────────────────────────────────────────
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim() || !currentUser || !currentShow) return;
+    if (!inputValue.trim() || !currentUser) return;
 
     const text = inputValue.trim();
     setInputValue('');
@@ -245,9 +253,9 @@ const LiveChat = () => {
     document.getElementById('chat-input')?.focus();
   };
 
-  const activeMessages = currentShow
-    ? messages.filter(m => m.programId === currentShow.id)
-    : [];
+  // Show all messages — no filter by show ID so chat history is never cleared when admin edits a show
+  const activeMessages = messages;
+
 
   // ── Render ───────────────────────────────────────────────────
   return (
@@ -265,7 +273,7 @@ const LiveChat = () => {
             : <span className="chat-subtitle offline">No broadcast right now</span>
           }
         </div>
-        {viewerCount > 0 && (
+        {viewerCount > 0 && currentShow && (
           <div className="viewers-count viewers-live">
             <Users size={14} />
             <span key={viewerCount} className="viewers-number">{viewerCount.toLocaleString()}</span>
@@ -320,7 +328,10 @@ const LiveChat = () => {
                   </div>
                 )}
 
-                <p className="chat-text">{msg.text}</p>
+                <p className={`chat-text ${msg.failed ? "chat-text-failed" : ""}`}>{msg.text}</p>
+                {msg.failed && (
+                  <span className="chat-failed-label">⚠ Not sent — tap to retry</span>
+                )}
                 {currentShow && (
                   <button className="reply-btn" onClick={() => handleReply(msg)}>
                     <Reply size={12} /> Reply
@@ -410,7 +421,7 @@ const LiveChat = () => {
                 placeholder={replyingTo ? `Reply to ${replyingTo.user}…` : `Chat as ${currentUser.name}…`}
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
-                maxLength={200}
+                maxLength={500}
               />
               <button type="submit" className="send-btn" disabled={!inputValue.trim()}>
                 <Send size={16} />

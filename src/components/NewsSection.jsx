@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { newsAPI } from "../services/api";
 import { Newspaper } from "lucide-react";
 import { useSettings } from "../services/useSettings";
@@ -67,7 +67,13 @@ const NewsSection = () => {
           {filtered.map(article=>(
             <article key={article.id} className="news-card glass-panel">
               {article.thumbnail ? (
-                <div className="news-image-wrapper"><img src={article.thumbnail} alt={article.title}/><span className="news-category">{article.category}</span><span className={`scope-badge ${(article.scope||"LOCAL").toLowerCase()}`}>{article.scope}</span></div>
+                <div className="news-image-wrapper">
+                <img src={article.thumbnail} alt={article.title} loading="lazy"/>
+                <div className="news-card-overlay">
+                  <span className="news-category">{article.category}</span>
+                  <span className={`scope-badge ${(article.scope||"LOCAL").toLowerCase()}`}>{article.scope}</span>
+                </div>
+              </div>
               ) : (
                 <div className="news-gradient-header" style={{background:article.color||"linear-gradient(135deg,#1a1a2e,#0d0d11)"}}>
                   <span className="news-category">{article.category}</span><span className={`scope-badge ${(article.scope||"LOCAL").toLowerCase()}`}>{article.scope}</span>

@@ -1,4 +1,4 @@
-.live-chat-container {
+﻿.live-chat-container {
   display: flex;
   flex-direction: column;
   height: 600px;
@@ -268,7 +268,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
+
+.chat-form input {
+  min-width: 0;  /* prevents input from pushing send button off screen */
+}
+
 
 .current-user-avatar {
   width: 30px;
@@ -295,8 +302,9 @@
   background: var(--accent);
   border: none;
   color: white;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;  /* never shrink on mobile */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -507,3 +515,35 @@
   width: 100%;
 }
 .signout-link:hover { color: var(--accent); }
+
+/* ── Mobile: ensure send button always visible ── */
+@media (max-width: 600px) {
+  .chat-form {
+    gap: 6px;
+  }
+  .chat-form input {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    min-width: 0;
+    flex: 1;
+  }
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
+  }
+  .current-user-avatar {
+    display: none; /* hide avatar on very small screens to give input more room */
+  }
+}
+/* ── Failed message indicator ── */
+.chat-text-failed {
+  opacity: 0.6;
+}
+.chat-failed-label {
+  display: block;
+  font-size: 0.68rem;
+  color: #f5a623;
+  margin-top: 3px;
+}

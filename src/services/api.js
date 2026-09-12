@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  API Service — Express/Node backend on port 5000
 // ============================================================
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -96,7 +96,7 @@ export const settingsAPI = {
 // ADMIN
 export const adminAPI = {
   schedule: {
-    getAll:  ()         => get("schedule"),
+    getAll:  ()         => get("schedule/weekly"),  // admin: all shows every day  // admin: all shows every day
     create:  (data)     => post("schedule", data),
     update:  (id, data) => put(`schedule/${id}`, data),
     remove:  (id)       => del(`schedule/${id}`),

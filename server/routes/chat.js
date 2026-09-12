@@ -9,7 +9,7 @@ router.get("/", async (req, res) => {
     const showId = parseInt(req.query.show_id);
     const limit  = Math.min(parseInt(req.query.limit) || 50, 100);
     const id     = isNaN(showId) ? 0 : showId;
-    const sql    = "SELECT m.id, m.show_id, m.message, m.created_at, m.reply_to_id, COALESCE(u.username, m.guest_name) AS username, COALESCE(u.avatar_url, m.avatar_url) AS avatar_url FROM chat_messages m LEFT JOIN users u ON u.id = m.user_id WHERE m.show_id = ? ORDER BY m.created_at ASC LIMIT ?";
+    const sql    = "SELECT m.id, m.show_id, m.message, m.created_at, m.reply_to_id, COALESCE(u.username, m.guest_name) AS username, COALESCE(u.avatar_url, m.avatar_url) AS avatar_url, r.message AS reply_text, COALESCE(ru.username, r.guest_name) AS reply_user FROM chat_messages m LEFT JOIN users u ON u.id = m.user_id LEFT JOIN chat_messages r ON r.id = m.reply_to_id LEFT JOIN users ru ON ru.id = r.user_id WHERE m.show_id = ? ORDER BY m.created_at ASC LIMIT ?";
     const [rows] = await pool.query(sql, [id, limit]);
     res.json({ messages: rows });
   } catch (e) {
@@ -40,13 +40,30 @@ router.post("/", async (req, res) => {
       [showId, userId, guest_name || null, avatarUrl, message.trim(), reply_to_id || null]
     );
     const [[msg]] = await pool.query(
-      "SELECT m.id, m.show_id, m.message, m.created_at, COALESCE(u.username, m.guest_name) AS username, COALESCE(u.avatar_url, m.avatar_url) AS avatar_url FROM chat_messages m LEFT JOIN users u ON u.id = m.user_id WHERE m.id = ?",
+      "SELECT m.id, m.show_id, m.message, m.created_at, m.reply_to_id, COALESCE(u.username, m.guest_name) AS username, COALESCE(u.avatar_url, m.avatar_url) AS avatar_url, r.message AS reply_text, COALESCE(ru.username, r.guest_name) AS reply_user FROM chat_messages m LEFT JOIN users u ON u.id = m.user_id LEFT JOIN chat_messages r ON r.id = m.reply_to_id LEFT JOIN users ru ON ru.id = r.user_id WHERE m.id = ?",
       [r.insertId]
     );
     res.status(201).json({ message: msg });
   } catch (e) {
     console.error("chat POST:", e.message);
     res.status(500).json({ error: "Failed to send message." });
+  }
+});
+
+// DELETE /api/chat/:id — delete a message (staff only)
+router.delete("/:id", async (req, res) => {
+  try {
+    const header = req.headers.authorization || "";
+    if (!header.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized." });
+    const { verifyToken } = await import("../middleware/auth.js");
+    const payload = verifyToken(header.slice(7));
+    if (!payload || !["admin","staff"].includes(payload.role)) {
+      return res.status(403).json({ error: "Staff access required." });
+    }
+    await pool.query("DELETE FROM chat_messages WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ error: "Failed to delete message." });
   }
 });
 
