@@ -95,10 +95,13 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  visibility: visible;
 }
 
-.video-wrapper:hover .player-controls-overlay {
-  opacity: 1;
+.player-controls-overlay.controls-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .show-info {
@@ -145,12 +148,17 @@
 
 .control-btn:hover { transform: scale(1.12); }
 
+.seek-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 .play-btn {
   background: white;
   color: black;
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   padding-left: 3px;
 }
 
@@ -404,11 +412,7 @@
     aspect-ratio: 16 / 9;
   }
 
-  /* Controls always visible on mobile — no hover */
-  .player-controls-overlay {
-    opacity: 1 !important;
-    padding: 30px 14px 12px;
-  }
+  .player-controls-overlay { padding: 30px 14px 12px; }
 
   .show-info h2 {
     font-size: 1rem;
@@ -437,8 +441,8 @@
 
   /* Smaller control buttons */
   .play-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 }
 

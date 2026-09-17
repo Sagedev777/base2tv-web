@@ -14,20 +14,50 @@ export default function ImageUpload({
   const [error,     setError]     = useState("");
   const fileRef = useRef();
 
+  const optimizeImage = (file) => new Promise((resolve) => {
+    if (type === "video" || type === "ad" && file.type.startsWith("video/") ||
+        !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      resolve(file);
+      return;
+    }
+
+    const image = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    image.onload = () => {
+      const maxDimension = 2400;
+      const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(image.naturalWidth * scale);
+      canvas.height = Math.round(image.naturalHeight * scale);
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        URL.revokeObjectURL(objectUrl);
+        if (!blob || blob.size >= file.size) {
+          resolve(file);
+          return;
+        }
+        const baseName = file.name.replace(/\.[^.]+$/, "");
+        resolve(new File([blob], `${baseName}.webp`, { type: "image/webp", lastModified: Date.now() }));
+      }, "image/webp", 0.86);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+    image.src = objectUrl;
+  });
+
   const handleFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 100 * 1024 * 1024) {
-      setError("File too large. Maximum 100 MB.");
-      setStatus("error");
-      return;
-    }
     setUploading(true); setStatus(null); setError("");
     try {
+      const shouldOptimize = type === "image" || (type === "ad" && !file.type.startsWith("video/"));
+      const uploadFile = shouldOptimize ? await optimizeImage(file) : file;
       let data;
-      if      (type === "video") data = await uploadAPI.video(file);
-      else if (type === "ad")    data = await uploadAPI.ad(file);
-      else                       data = await uploadAPI.image(file);
+      if      (type === "video") data = await uploadAPI.video(uploadFile);
+      else if (type === "ad")    data = await uploadAPI.ad(uploadFile);
+      else                       data = await uploadAPI.image(uploadFile);
       onChange(data.url);
       setStatus("ok");
       setTimeout(() => setStatus(null), 3000);
@@ -47,7 +77,7 @@ export default function ImageUpload({
   };
 
   const isVideo = type === "video" || type === "ad";
-  const hint    = isVideo ? "MP4 or WebM — max 100 MB" : "JPG, PNG, WebP — max 100 MB";
+  const hint    = isVideo ? "MP4 or WebM" : "JPG, PNG, WebP";
   const Icon    = isVideo ? Film : Image;
 
   return (

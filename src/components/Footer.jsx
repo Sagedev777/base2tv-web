@@ -134,7 +134,7 @@ const Footer = () => {
             <h4>EXPLORE</h4>
             <a href="#live">Live TV</a>
             <a href="#guide">TV Guide</a>
-            <a href="#news">News</a>
+            <a href="#latest-stories">News</a>
             <a href="#catchup">Catch Up</a>
             <a href="#features">Features</a>
             <a href="#contact">Contact</a>

@@ -1,7 +1,7 @@
 ﻿// ============================================================
 //  API Service — Express/Node backend on port 5000
 // ============================================================
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const BASE = import.meta.env.VITE_API_URL || "/api";
 
 export const getToken    = ()  => localStorage.getItem("b2tv_token");
 export const setToken    = (t) => localStorage.setItem("b2tv_token", t);

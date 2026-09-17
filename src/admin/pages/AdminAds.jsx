@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
-import { adsAPI } from "../../services/api";
+import { adsAPI, uploadAPI } from "../../services/api";
 import { Plus, Pencil, Trash2, Save, X, Upload } from "lucide-react";
+import ImageUpload from "../ImageUpload";
 
 const POSITIONS = ["sidebar","below-chat","banner","all"];
 const EMPTY = { title:"", media_url:"", media_type:"image", link_url:"", duration_sec:10, position:"sidebar", start_date:"", end_date:"", is_active:1, sort_order:0 };

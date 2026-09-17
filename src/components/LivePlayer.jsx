@@ -1,45 +1,30 @@
 ﻿import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Volume2, VolumeX, Maximize } from "lucide-react";
-import { scheduleAPI } from "../services/api";
-import { tvSchedule as staticSchedule } from "../data/schedule";
+import { Volume2, VolumeX, Maximize, SkipBack, SkipForward } from "lucide-react";
 import "./LivePlayer.css";
 import AudienceStats from "./AudienceStats";
 
 const LivePlayer = () => {
   const videoRef = useRef(null);
+  const controlsTimerRef = useRef(null);
   const [muted, setMuted] = useState(true);
   const [error, setError] = useState(false);
-  const [currentShow, setCurrentShow] = useState(null);
+  const [controlsVisible, setControlsVisible] = useState(true);
 
-  // Detect current show from API, fall back to static
+  const showControls = () => {
+    setControlsVisible(true);
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    controlsTimerRef.current = setTimeout(() => setControlsVisible(false), 3500);
+  };
+
   useEffect(() => {
-    const detect = async () => {
-      try {
-        const d = await scheduleAPI.getCurrent();
-        setCurrentShow(d.show || null);
-      } catch {
-        // fallback to static schedule
-        const now = new Date();
-        const ugStr = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Kampala", hour: "numeric", minute: "numeric", hour12: false }).format(now);
-        const [h, m] = ugStr.split(":").map(Number);
-        const nowMins = h * 60 + m;
-        const active = staticSchedule.find((show) => {
-          const match = show.time.match(/(\d{1,2}:\d{2})\s*(AM|PM)/i);
-          if (!match) return false;
-          let [, timeStr, mod] = match;
-          let [hours, mins] = timeStr.split(":").map(Number);
-          if (mod.toUpperCase() === "PM" && hours < 12) hours += 12;
-          if (mod.toUpperCase() === "AM" && hours === 12) hours = 0;
-          const start = hours * 60 + mins;
-          return nowMins >= start && nowMins < start + show.duration;
-        });
-        setCurrentShow(active || null);
-      }
+    showControls();
+    const handleScroll = () => showControls();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
     };
-    detect();
-    const i = setInterval(detect, 300000) // 5 min;
-    return () => clearInterval(i);
   }, []);
 
   // HLS stream
@@ -64,6 +49,14 @@ const LivePlayer = () => {
     if (videoRef.current) { videoRef.current.muted = !muted; setMuted(!muted); }
   };
 
+  const seekVideo = (seconds) => {
+    const video = videoRef.current;
+    if (!video || !video.seekable.length) return;
+    const start = video.seekable.start(0);
+    const end = video.seekable.end(video.seekable.length - 1);
+    video.currentTime = Math.max(start, Math.min(end, video.currentTime + seconds));
+  };
+
   const handleFullscreen = () => {
     const v = videoRef.current;
     if (!v) return;
@@ -75,7 +68,14 @@ const LivePlayer = () => {
   return (
     <section className="live-player-section" id="live">
       <div className="player-container glass-panel">
-        <div className="video-wrapper">
+        <div
+          className="video-wrapper"
+          onMouseMove={showControls}
+          onTouchStart={showControls}
+          onClick={showControls}
+          onWheel={showControls}
+          onKeyDown={showControls}
+        >
           {error ? (
             <div className="stream-error"><p>Stream is currently offline or loading…</p></div>
           ) : (
@@ -95,16 +95,18 @@ const LivePlayer = () => {
             LIVE
           </div>
 
-          <div className="player-controls-overlay">
-            <div className="show-info">
-              <h2>{currentShow ? currentShow.title : "Base2 TV Uganda"}</h2>
-              <p>{currentShow ? currentShow.description : "Live Broadcasting 24/7"}</p>
-            </div>
+          <div className={`player-controls-overlay ${controlsVisible ? "" : "controls-hidden"}`}>
             <div className="controls-row">
+              <button className="control-btn seek-btn" onClick={() => seekVideo(-10)} title="Skip back 10 seconds" aria-label="Skip back 10 seconds">
+                <SkipBack />
+              </button>
               <button className="control-btn play-btn" onClick={toggleMute} title={muted ? "Unmute" : "Mute"}>
                 {muted ? <VolumeX fill="currentColor" color="black" /> : <Volume2 fill="currentColor" color="black" />}
               </button>
               <span className="mute-label">{muted ? "Click to Unmute" : "Playing Live"}</span>
+              <button className="control-btn seek-btn" onClick={() => seekVideo(10)} title="Skip forward 10 seconds" aria-label="Skip forward 10 seconds">
+                <SkipForward />
+              </button>
               <div className="spacer" />
               <button className="control-btn" onClick={handleFullscreen} title="Fullscreen">
                 <Maximize />

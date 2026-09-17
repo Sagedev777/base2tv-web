@@ -123,7 +123,7 @@ const Header = () => {
         <nav className={`main-nav ${mobileOpen ? 'open' : ''}`}>
           <a href="#live"     className="nav-link active" onClick={() => setMobileOpen(false)}>Live</a>
           <a href="#guide"    className="nav-link"        onClick={() => setMobileOpen(false)}>Guide</a>
-          <a href="#news"     className="nav-link"        onClick={() => setMobileOpen(false)}>News</a>
+          <a href="#latest-stories" className="nav-link"   onClick={() => setMobileOpen(false)}>News</a>
           <a href="#catchup"  className="nav-link"        onClick={() => setMobileOpen(false)}>Catch-Up</a>
           <a href="#features" className="nav-link"        onClick={() => setMobileOpen(false)}>Features</a>
           <a href="#contact"  className="nav-link"        onClick={() => setMobileOpen(false)}>Contact</a>

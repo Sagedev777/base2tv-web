@@ -60,7 +60,7 @@ body {
     width: 100%;
   }
 
-  .chat-column {
+  .ads-column {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -76,7 +76,7 @@ body {
   min-width: 0; /* Prevents flex blowout */
 }
 
-.chat-column {
+.ads-column {
   flex: 1;
   min-width: 0;   /* allow shrinking */
   max-width: 400px;
@@ -87,7 +87,7 @@ body {
     flex-direction: column;
     gap: 16px;
   }
-  .chat-column {
+  .ads-column {
     max-width: 100%;
     width: 100%;
   }

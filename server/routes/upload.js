@@ -33,7 +33,6 @@ const fileFilter = (req, file, cb) => {
 const makeUpload = (folder) => multer({
   storage:    makeStorage(folder),
   fileFilter,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB
 });
 
 const handleUpload = (folder) => (req, res) => {
