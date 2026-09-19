@@ -69,9 +69,12 @@ const AdsBanner = ({ position = "sidebar" }) => {
             src={mediaUrl}
             autoPlay
             muted
+            defaultMuted
+            preload="auto"
             loop={ads.length === 1}
             playsInline
             className="ads-media"
+            onCanPlay={event => event.currentTarget.play().catch(() => {})}
             onEnded={() => setCurrent(c => (c + 1) % ads.length)}
             onError={handleMediaError}
           />
@@ -85,10 +88,15 @@ const AdsBanner = ({ position = "sidebar" }) => {
           />
         )}
 
-        {ad.title && <div className="ads-title-overlay">{ad.title}</div>}
       </div>
 
-      {/* Dot indicators */}
+      {(ad.title || ad.description) && (
+        <div className="ads-caption">
+          {ad.title && <strong>{ad.title}</strong>}
+          {ad.description && <span>{ad.description}</span>}
+        </div>
+      )}
+
       {ads.length > 1 && (
         <div className="ads-dots">
           {ads.map((_, i) => (

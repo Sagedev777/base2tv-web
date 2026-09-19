@@ -162,6 +162,13 @@
   padding-left: 3px;
 }
 
+.always-mute-control {
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  z-index: 4;
+}
+
 
 /* ═══════════════════════════════════════════════
    AUDIENCE STATISTICS PANEL
@@ -443,6 +450,11 @@
   .play-btn {
     width: 32px;
     height: 32px;
+  }
+
+  .always-mute-control {
+    left: 14px;
+    bottom: 12px;
   }
 }
 

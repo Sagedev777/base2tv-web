@@ -5,6 +5,7 @@ import { useSettings } from "../services/useSettings";
 import "./NewsSection.css";
 
 const SCOPE_FILTERS = ["ALL","LOCAL","GLOBAL"];
+const PREVIEW_STORY_COUNT = 6;
 const kampalaDate = (date) => new Intl.DateTimeFormat("en-CA", {
   timeZone: "Africa/Kampala",
   year: "numeric",
@@ -102,17 +103,71 @@ const NewsSection = ({ fullPage = false }) => {
   },[activeFilter,activeSector,fullPage]);
 
   useEffect(()=>{
-    if (fullPage || todayArticles.length<=4) return;
-    const interval=setInterval(()=>setRotationStart(start=>(start+4)%todayArticles.length),8000);
+    if (fullPage || todayArticles.length<=PREVIEW_STORY_COUNT) return;
+    const interval=setInterval(()=>setRotationStart(start=>(start+PREVIEW_STORY_COUNT)%todayArticles.length),8000);
     return ()=>clearInterval(interval);
   },[todayArticles.length,fullPage]);
 
   const visibleArticles = fullPage
     ? filtered
-    : Array.from({length:Math.min(4,todayArticles.length)},(_,index)=>todayArticles[(rotationStart+index)%todayArticles.length]);
+    : Array.from({length:Math.min(PREVIEW_STORY_COUNT,todayArticles.length)},(_,index)=>todayArticles[(rotationStart+index)%todayArticles.length]);
+  const belowLeadArticles = !fullPage
+    ? Array.from({length:Math.min(2, Math.max(0, todayArticles.length - PREVIEW_STORY_COUNT))},(_,index)=>todayArticles[(rotationStart + PREVIEW_STORY_COUNT + index) % todayArticles.length])
+    : [];
+
+  const renderFullPageFeed = () => {
+    const lead = filtered[0];
+    const sideStories = filtered.slice(1, 5);
+    const exploreStories = filtered.slice(5, 11);
+    const moreStories = filtered.slice(11, 17);
+    const listStories = filtered.slice(17, 27);
+
+    return (
+      <div className="bbc-page-feed">
+        <section className="bbc-top-stories">
+          <h3 className="bbc-band-title">TOP STORIES</h3>
+          <div className="bbc-top-grid">
+            <StoryCard article={lead} lead onSelect={setSelected}/>
+            <div className="bbc-top-side">
+              {sideStories.map(article=><StoryCard key={article.id} article={article} onSelect={setSelected}/>)}
+            </div>
+          </div>
+        </section>
+
+        {exploreStories.length > 0 && <section className="bbc-news-band">
+          <h3 className="bbc-band-title">MORE TO EXPLORE</h3>
+          <div className="bbc-story-grid">
+            {exploreStories.map(article=><StoryCard key={article.id} article={article} onSelect={setSelected}/>)}
+          </div>
+        </section>}
+
+        {moreStories.length > 0 && <section className="bbc-news-band">
+          <h3 className="bbc-band-title">ALSO IN NEWS</h3>
+          <div className="bbc-story-grid">
+            {moreStories.map(article=><StoryCard key={article.id} article={article} onSelect={setSelected}/>)}
+          </div>
+        </section>}
+
+        {listStories.length > 0 && <section className="bbc-list-band">
+          <div>
+            <h3 className="bbc-band-title">MOST READ</h3>
+            <ol className="bbc-ranked-list">
+              {listStories.slice(0, 5).map(article=><li key={article.id} onClick={()=>setSelected(article)}>{article.title}</li>)}
+            </ol>
+          </div>
+          <div>
+            <h3 className="bbc-band-title">LATEST</h3>
+            <ol className="bbc-ranked-list">
+              {listStories.slice(5, 10).map(article=><li key={article.id} onClick={()=>setSelected(article)}>{article.title}</li>)}
+            </ol>
+          </div>
+        </section>}
+      </div>
+    );
+  };
 
   return (
-    <section className={`news-section ${fullPage ? "latest-stories-page" : ""}`} id="news">
+    <section className={`news-section ${fullPage ? "latest-stories-page" : "homepage-news"}`} id="news">
       <div className="section-header"><h2>{fullPage ? "Latest Stories" : s("news_title","Latest Stories")}</h2><span className="date-pill">{s("news_pill","FROM UGANDA")}</span></div>
       <p className="section-subtitle">{fullPage ? "All published stories from Base2 TV" : s("news_subtitle","Local first · Global when it matters")}</p>
       {fullPage && <button className="latest-back-btn" onClick={()=>{ window.location.hash=""; }}>Back to homepage</button>}
@@ -128,23 +183,31 @@ const NewsSection = ({ fullPage = false }) => {
         <div className="section-empty"><div className="section-empty-spinner"/><p>Loading stories...</p></div>
       ) : error ? (
         <div className="section-empty"><Newspaper size={40} opacity={0.3}/><p>{error}</p></div>
-      ) : filtered.length===0 ? (
+      ) : (fullPage ? filtered.length===0 : todayArticles.length===0) ? (
         <div className="section-empty"><Newspaper size={40} opacity={0.3}/><p>{fullPage ? "No stories published yet." : "No stories published today."}</p><span>{fullPage ? "Check back soon — our newsdesk is working on it." : "Older stories are available on the Latest Stories page."}</span></div>
-      ) : (
+      ) : fullPage ? renderFullPageFeed() : (
         <div className="news-grid">
-          <StoryCard article={visibleArticles[0]} lead onSelect={setSelected}/>
+          <div className="homepage-lead-column">
+            <StoryCard article={visibleArticles[0]} lead onSelect={setSelected}/>
+            {belowLeadArticles.length > 0 && (
+              <div className="homepage-below-lead-feed">
+                <h3 className="homepage-feed-label">MORE FROM TODAY</h3>
+                {belowLeadArticles.map(article=><StoryCard key={article.id} article={article} onSelect={setSelected}/>)}
+              </div>
+            )}
+          </div>
           <div className="news-supporting-feed">
             {visibleArticles.slice(1).map(article=>(
               <StoryCard key={article.id} article={article} onSelect={setSelected}/>
             ))}
+            {!fullPage && !loading && !error && todayArticles.length > 0 && (
+              <div className="news-actions">
+                <button className="news-view-more-btn" onClick={()=>{ window.location.hash="latest-stories" }}>
+                  View more news
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-      {!fullPage && !loading && !error && filtered.length > 0 && (
-        <div className="news-actions">
-          <button className="news-view-more-btn" onClick={()=>{ window.location.hash="latest-stories"; }}>
-            View more news
-          </button>
         </div>
       )}
       {selected&&<StoryModal article={selected} onClose={()=>setSelected(null)}/>}

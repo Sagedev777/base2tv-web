@@ -100,10 +100,6 @@ const LivePlayer = () => {
               <button className="control-btn seek-btn" onClick={() => seekVideo(-10)} title="Skip back 10 seconds" aria-label="Skip back 10 seconds">
                 <SkipBack />
               </button>
-              <button className="control-btn play-btn" onClick={toggleMute} title={muted ? "Unmute" : "Mute"}>
-                {muted ? <VolumeX fill="currentColor" color="black" /> : <Volume2 fill="currentColor" color="black" />}
-              </button>
-              <span className="mute-label">{muted ? "Click to Unmute" : "Playing Live"}</span>
               <button className="control-btn seek-btn" onClick={() => seekVideo(10)} title="Skip forward 10 seconds" aria-label="Skip forward 10 seconds">
                 <SkipForward />
               </button>
@@ -113,6 +109,9 @@ const LivePlayer = () => {
               </button>
             </div>
           </div>
+          <button className="control-btn play-btn always-mute-control" onClick={toggleMute} title={muted ? "Unmute" : "Mute"} aria-label={muted ? "Unmute" : "Mute"}>
+            {muted ? <VolumeX fill="currentColor" color="black" /> : <Volume2 fill="currentColor" color="black" />}
+          </button>
         </div>
       </div>
       <AudienceStats />

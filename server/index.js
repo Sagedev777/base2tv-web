@@ -5,7 +5,7 @@ import rateLimit  from "express-rate-limit";
 import path       from "path";
 import { fileURLToPath } from "url";
 
-import { getDbConfigStatus } from "./db.js";
+import { getDbConfigStatus, ensureAdDescriptionColumn } from "./db.js";
 
 import authRoutes      from "./routes/auth.js";
 import scheduleRoutes  from "./routes/schedule.js";
@@ -105,7 +105,17 @@ app.get("/api/debug/db", (req, res) => {
   });
 });
 
-// ── Start ─────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log("\n  Base2 TV API running on http://localhost:" + PORT + "/api\n");
-});
+// ── Start after required schema migrations complete ──────────
+const startServer = async () => {
+  const schemaReady = await ensureAdDescriptionColumn();
+  if (!schemaReady) {
+    console.error("  Server startup stopped: ads.description is unavailable.");
+    process.exitCode = 1;
+    return;
+  }
+  app.listen(PORT, () => {
+    console.log("\n  Base2 TV API running on http://localhost:" + PORT + "/api\n");
+  });
+};
+
+startServer();

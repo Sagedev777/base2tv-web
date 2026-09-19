@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, Save, X, Upload } from "lucide-react";
 import ImageUpload from "../ImageUpload";
 
 const POSITIONS = ["sidebar","below-chat","banner","all"];
-const EMPTY = { title:"", media_url:"", media_type:"image", link_url:"", duration_sec:10, position:"sidebar", start_date:"", end_date:"", is_active:1, sort_order:0 };
+const EMPTY = { title:"", description:"", media_url:"", media_type:"image", link_url:"", duration_sec:10, position:"sidebar", start_date:"", end_date:"", is_active:1, sort_order:0 };
 
 export default function AdminAds() {
   const [items,   setItems]   = useState([]);
@@ -78,6 +78,11 @@ export default function AdminAds() {
 
             <label>Ad Title (internal label)
               <input type="text" value={form.title} onChange={e=>set("title",e.target.value)} maxLength={200}/>
+            </label>
+
+            <label>Ad Description (shown to viewers)
+              <textarea rows={3} value={form.description || ""} onChange={e=>set("description",e.target.value)} maxLength={500}
+                placeholder="Short description of this advertisement" />
             </label>
 
             <ImageUpload

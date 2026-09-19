@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/ads — active ads for public display
 router.get("/", async (req, res) => {
   const [rows] = await pool.query(
-    `SELECT id, title, media_url, media_type, link_url, duration_sec, position
+    `SELECT id, title, description, media_url, media_type, link_url, duration_sec, position
      FROM ads
      WHERE is_active = 1
        AND (start_date IS NULL OR start_date <= NOW())
@@ -26,21 +26,21 @@ router.get("/all", requireAdmin, async (req, res) => {
 
 // POST — create ad (staff)
 router.post("/", requireAdmin, async (req, res) => {
-  const { title, media_url, media_type, link_url, duration_sec, position, start_date, end_date, is_active, sort_order } = req.body;
+  const { title, description, media_url, media_type, link_url, duration_sec, position, start_date, end_date, is_active, sort_order } = req.body;
   const [r] = await pool.query(
-    `INSERT INTO ads (title, media_url, media_type, link_url, duration_sec, position, start_date, end_date, is_active, sort_order)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
-    [title||"", media_url, media_type||"image", link_url||"", duration_sec||10, position||"sidebar", start_date||null, end_date||null, is_active??1, sort_order||0]
+    `INSERT INTO ads (title, description, media_url, media_type, link_url, duration_sec, position, start_date, end_date, is_active, sort_order)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [title||"", description||"", media_url, media_type||"image", link_url||"", duration_sec||10, position||"sidebar", start_date||null, end_date||null, is_active??1, sort_order||0]
   );
   res.status(201).json({ id: r.insertId });
 });
 
 // PUT — update
 router.put("/:id", requireAdmin, async (req, res) => {
-  const { title, media_url, media_type, link_url, duration_sec, position, start_date, end_date, is_active, sort_order } = req.body;
+  const { title, description, media_url, media_type, link_url, duration_sec, position, start_date, end_date, is_active, sort_order } = req.body;
   await pool.query(
-    `UPDATE ads SET title=?,media_url=?,media_type=?,link_url=?,duration_sec=?,position=?,start_date=?,end_date=?,is_active=?,sort_order=? WHERE id=?`,
-    [title||"", media_url, media_type||"image", link_url||"", duration_sec||10, position||"sidebar", start_date||null, end_date||null, is_active??1, sort_order||0, req.params.id]
+    `UPDATE ads SET title=?,description=?,media_url=?,media_type=?,link_url=?,duration_sec=?,position=?,start_date=?,end_date=?,is_active=?,sort_order=? WHERE id=?`,
+    [title||"", description||"", media_url, media_type||"image", link_url||"", duration_sec||10, position||"sidebar", start_date||null, end_date||null, is_active??1, sort_order||0, req.params.id]
   );
   res.json({ success: true });
 });

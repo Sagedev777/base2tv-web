@@ -49,3 +49,15 @@ pool.getConnection()
   });
 
 export default pool;
+
+export async function ensureAdDescriptionColumn() {
+  try {
+    await pool.query("ALTER TABLE ads ADD COLUMN description TEXT NULL AFTER title");
+    console.log("  Added ads.description column.");
+    return true;
+  } catch (error) {
+    if (/duplicate column|already exists/i.test(error.message)) return true;
+    console.error("  Could not verify ads.description column:", error.message);
+    return false;
+  }
+}

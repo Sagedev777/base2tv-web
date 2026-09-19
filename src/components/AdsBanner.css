@@ -54,17 +54,47 @@
   font-size: 0.78rem;
   font-weight: 600;
   padding: 16px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ads-title-overlay strong {
+  font-size: 0.78rem;
+}
+
+.ads-title-overlay span {
+  color: rgba(255,255,255,0.82);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+.ads-caption {
+  background: rgba(10,10,18,0.92);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px 11px;
 }
 
 .ads-dots {
   display: flex;
   justify-content: center;
+.ads-caption strong {
+  font-size: 0.78rem;
+}
   gap: 6px;
   padding: 8px;
 }
 
 .ads-dot {
   width: 6px;
+.ads-caption span {
+  color: rgba(255,255,255,0.82);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
   height: 6px;
   border-radius: 50%;
   border: none;
