@@ -1,0 +1,10 @@
+{
+  "appId": "ug.base2tv.app",
+  "appName": "Base2 TV",
+  "webDir": "dist",
+  "server": {
+    "url": "https://base2tv.ug",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}

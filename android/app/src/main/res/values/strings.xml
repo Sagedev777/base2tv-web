@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Base2 TV</string>
+    <string name="title_activity_main">Base2 TV</string>
+    <string name="package_name">ug.base2tv.app</string>
+    <string name="custom_url_scheme">ug.base2tv.app</string>
+</resources>

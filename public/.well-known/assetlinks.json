@@ -1,0 +1,12 @@
+[
+	{
+		"relation": ["delegate_permission/common.handle_all_urls"],
+		"target": {
+			"namespace": "android_app",
+			"package_name": "ug.base2tv.app",
+			"sha256_cert_fingerprints": [
+				"4F:1E:59:C7:75:DD:72:5C:1F:6A:EF:82:75:71:7C:9D:48:9C:19:6C:2E:69:41:A5:40:30:ED:FF:3B:B3:8E:A0"
+			]
+		}
+	}
+]
