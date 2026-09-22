@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { adminAPI } from "../../services/api";
-import { Plus, Pencil, Trash2, Save, X, Clock, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, X, Clock, AlertCircle, AlertTriangle } from "lucide-react";
 import ImageUpload from "../ImageUpload.jsx";
 
 const WEEK_DAYS = [
@@ -14,7 +14,9 @@ const WEEK_DAYS = [
 ];
 
 const makeEmpty = () => ({
+  id: null,
   title: "", description: "", thumbnail: "", week_notes: "",
+  // Create mode
   daily: false,
   dailyStart: "06:00",
   dailyEnd:   "07:00",
@@ -22,6 +24,10 @@ const makeEmpty = () => ({
     acc[d.key] = { enabled:false, start:"06:00", end:"07:00" };
     return acc;
   }, {}),
+  // Edit mode
+  originalDays: "monday",
+  editStart: "06:00",
+  editEnd: "07:00"
 });
 
 const fmtTime = (t) => {
@@ -38,76 +44,68 @@ const toMin = (t) => {
 };
 
 export default function AdminSchedule() {
-  const [items,   setItems]   = useState([]);
-  const [grouped, setGrouped] = useState({});
+  const [scheduleData, setScheduleData] = useState({});
+  const [activeTab, setActiveTab] = useState("monday");
   const [loading, setLoading] = useState(true);
-  const [form,    setForm]    = useState(null);
-  const [saving,  setSaving]  = useState(false);
-  const [error,   setError]   = useState("");
+  const [form, setForm] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const load = async () => {
     setLoading(true);
     try {
-      const d = await adminAPI.schedule.getAll();
-      // /schedule/weekly returns { grouped: {monday:[...], tuesday:[...], ...} }
-      // Flatten all shows into a unique list (by id) so items has every show
-      let rows = [];
-      if (d.grouped) {
+      const d = await adminAPI.schedule.getAll(); 
+      const grouped = d.grouped || {};
+      const fullDays = {};
+      
+      WEEK_DAYS.forEach(day => {
+        // Merge daily items and this day's items
+        const merged = [...(grouped[day.key] || []), ...(grouped.daily || [])];
+        merged.sort((a,b) => toMin(a.air_time) - toMin(b.air_time));
+        
+        // Remove exact duplicates
+        const unique = [];
         const seen = new Set();
-        Object.values(d.grouped).forEach(arr => {
-          arr.forEach(r => { if (!seen.has(r.id)) { seen.add(r.id); rows.push(r); } });
+        merged.forEach(item => {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            unique.push(item);
+          }
         });
-      } else {
-        rows = d.schedule || [];
-      }
-      setItems(rows);
-      const g = {};
-      rows.forEach(r => { if (!g[r.title]) g[r.title]=[]; g[r.title].push(r); });
-      setGrouped(g);
+        fullDays[day.key] = unique;
+      });
+      
+      setScheduleData(fullDays);
+      if (!activeTab) setActiveTab(d.today || "monday");
     } catch(e) { setError(e.message); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
 
-  const openNew = () => setForm({ ...makeEmpty(), _editIds:[] });
+  const openNew = () => setForm(makeEmpty());
 
   const openEdit = (row) => {
-    const sameTitle = items.filter(r => r.title === row.title);
     const f = makeEmpty();
-    f.title = row.title||""; f.description = row.description||"";
-    f.thumbnail = row.thumbnail||""; f.week_notes = row.week_notes||"";
-    f._editIds = sameTitle.map(r => r.id);
-    sameTitle.forEach(r => {
-      const daysStr = r.days || r.day_of_week || "daily";
-      const dayList = daysStr.split(",").map(x => x.trim());
-
-      // air_time and end_time come as "HH:MM:SS" from MySQL — slice to "HH:MM"
-      const st = (r.air_time  || "06:00:00").slice(0,5);
-      // end_time might be null if not set — calculate from duration_min as fallback
-      let en = "07:00:00";
-      if (r.end_time) {
-        en = r.end_time.slice(0,5);
-      } else if (r.duration_min) {
-        // Calculate from start + duration
-        const parts = st.split(":").map(Number);
-        const startMins = parts[0]*60 + parts[1];
-        const endMins   = startMins + r.duration_min;
-        en = String(Math.floor(endMins/60)).padStart(2,"0") + ":" + String(endMins%60).padStart(2,"0");
-      }
-
-      if (dayList.includes("daily")) {
-        f.daily = true; f.dailyStart = st; f.dailyEnd = en;
-      } else {
-        dayList.forEach(day => {
-          if (f.daySlots[day]) {
-            f.daySlots[day].enabled = true;
-            f.daySlots[day].start   = st;
-            f.daySlots[day].end     = en;
-          }
-        });
-      }
-    });
+    f.id = row.id;
+    f.title = row.title || ""; 
+    f.description = row.description || "";
+    f.thumbnail = row.thumbnail || ""; 
+    f.week_notes = row.week_notes || "";
+    f.originalDays = row.days || row.day_of_week || "daily";
+    
+    const st = (row.air_time || "06:00:00").slice(0,5);
+    let en = "07:00:00";
+    if (row.end_time) {
+      en = row.end_time.slice(0,5);
+    } else if (row.duration_min) {
+      const parts = st.split(":").map(Number);
+      const endMins = (parts[0]*60 + parts[1]) + row.duration_min;
+      en = String(Math.floor(endMins/60)).padStart(2,"0") + ":" + String(endMins%60).padStart(2,"0");
+    }
+    
+    f.editStart = st;
+    f.editEnd = en;
     setForm(f);
   };
 
@@ -117,18 +115,17 @@ export default function AdminSchedule() {
     ...f, daySlots: { ...f.daySlots, [day]: { ...f.daySlots[day], [key]: value } }
   }));
 
-  // Client-side validation: end must be after start
   const validateTimes = () => {
-    if (form.daily) {
-      if (toMin(form.dailyEnd) <= toMin(form.dailyStart)) {
-        return "End time must be after start time for Every Day setting.";
-      }
+    if (form.id) {
+      if (toMin(form.editEnd) <= toMin(form.editStart)) return "End time must be after start time.";
     } else {
-      for (const d of WEEK_DAYS) {
-        const s = form.daySlots[d.key];
-        if (!s.enabled) continue;
-        if (toMin(s.end) <= toMin(s.start)) {
-          return `End time must be after start time for ${d.label}.`;
+      if (form.daily) {
+        if (toMin(form.dailyEnd) <= toMin(form.dailyStart)) return "End time must be after start time for Every Day setting.";
+      } else {
+        for (const d of WEEK_DAYS) {
+          const s = form.daySlots[d.key];
+          if (!s.enabled) continue;
+          if (toMin(s.end) <= toMin(s.start)) return `End time must be after start time for ${d.label}.`;
         }
       }
     }
@@ -137,8 +134,10 @@ export default function AdminSchedule() {
 
   const save = async (e) => {
     e.preventDefault();
-    const anySelected = form.daily || WEEK_DAYS.some(d => form.daySlots[d.key].enabled);
-    if (!anySelected) { setError("Select at least one day."); return; }
+    if (!form.id) {
+      const anySelected = form.daily || WEEK_DAYS.some(d => form.daySlots[d.key].enabled);
+      if (!anySelected) { setError("Select at least one day."); return; }
+    }
     const timeErr = validateTimes();
     if (timeErr) { setError(timeErr); return; }
 
@@ -146,60 +145,55 @@ export default function AdminSchedule() {
     try {
       const base = { title:form.title, description:form.description, thumbnail:form.thumbnail, week_notes:form.week_notes };
 
-      if (form._editIds?.length) {
-        // EDIT MODE: update existing rows in place to preserve chat message links
-        // Get list of new slots to save
-        const newSlots = [];
-        if (form.daily) {
-          newSlots.push({ air_time: form.dailyStart+":00", end_time: form.dailyEnd+":00", day_of_week:"daily", days:"daily", duration_min: toMin(form.dailyEnd)-toMin(form.dailyStart) });
-        } else {
-          for (const d of WEEK_DAYS) {
-            const s = form.daySlots[d.key];
-            if (!s.enabled) continue;
-            newSlots.push({ air_time: s.start+":00", end_time: s.end+":00", day_of_week: d.key, days: d.key, duration_min: toMin(s.end)-toMin(s.start) });
-          }
-        }
-        // Update existing rows, delete extras, create new ones
-        for (let i = 0; i < Math.max(form._editIds.length, newSlots.length); i++) {
-          if (i < newSlots.length && i < form._editIds.length) {
-            // Update existing row — PRESERVES the show ID so chat messages stay linked
-            await adminAPI.schedule.update(form._editIds[i], { ...base, ...newSlots[i] });
-          } else if (i < form._editIds.length) {
-            // Extra old row — delete it
-            await adminAPI.schedule.remove(form._editIds[i]).catch(()=>{});
-          } else {
-            // New slot — create it
-            await adminAPI.schedule.create({ ...base, ...newSlots[i] });
-          }
-        }
+      if (form.id) {
+        // EDIT MODE
+        await adminAPI.schedule.update(form.id, {
+          ...base,
+          air_time: form.editStart+":00", 
+          end_time: form.editEnd+":00",
+          day_of_week: form.originalDays, 
+          days: form.originalDays
+        });
       } else {
         // CREATE MODE
         if (form.daily) {
-          await adminAPI.schedule.create({ ...base, air_time: form.dailyStart+":00", end_time: form.dailyEnd+":00", day_of_week:"daily", days:"daily", duration_min: toMin(form.dailyEnd)-toMin(form.dailyStart) });
+          // Creates independent records for each day of the week
+          for (const d of WEEK_DAYS) {
+            await adminAPI.schedule.create({ 
+               ...base, 
+               air_time: form.dailyStart+":00", 
+               end_time: form.dailyEnd+":00", 
+               day_of_week: d.key, 
+               days: d.key 
+            });
+          }
         } else {
           for (const d of WEEK_DAYS) {
             const s = form.daySlots[d.key];
             if (!s.enabled) continue;
-            await adminAPI.schedule.create({ ...base, air_time: s.start+":00", end_time: s.end+":00", day_of_week: d.key, days: d.key, duration_min: toMin(s.end)-toMin(s.start) });
+            await adminAPI.schedule.create({ 
+               ...base, 
+               air_time: s.start+":00", 
+               end_time: s.end+":00", 
+               day_of_week: d.key, 
+               days: d.key 
+            });
           }
         }
       }
       closeForm(); load();
     } catch(err) {
-      // Show the conflict error prominently
       setError(err.message);
     } finally { setSaving(false); }
   };
 
-  const removeGroup = async (title) => {
-    if (!confirm(`Delete all slots for "${title}"?`)) return;
+  const removeSlot = async (id) => {
+    if (!confirm(`Delete this programme slot?`)) return;
     try {
-      for (const r of items.filter(r=>r.title===title)) await adminAPI.schedule.remove(r.id);
+      await adminAPI.schedule.remove(id);
       load();
     } catch(e) { setError(e.message); }
   };
-
-  const fmtDayKey = (k) => WEEK_DAYS.find(d=>d.key===k)?.label || k;
 
   const TimeRow = ({ label, startVal, endVal, onStartChange, onEndChange, disabled=false }) => (
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -228,23 +222,49 @@ export default function AdminSchedule() {
   return (
     <div className="adm-page">
       <div className="adm-page-header">
-        <h2>TV Schedule</h2>
+        <div>
+          <h2>TV Schedule</h2>
+          <p className="adm-subtitle">Chronological broadcast schedule by day.</p>
+        </div>
         <button className="adm-btn-primary" onClick={openNew}><Plus size={16}/> Add Programme</button>
       </div>
 
-      {error && (
+      {error && !form && (
         <div className="adm-error" style={{display:"flex",alignItems:"flex-start",gap:8}}>
           <AlertCircle size={16} style={{flexShrink:0,marginTop:2}}/>
           {error}
         </div>
       )}
 
+      {/* Tabs */}
+      <div style={{display:"flex", gap:10, marginBottom:20, overflowX:"auto", paddingBottom:5}}>
+        {WEEK_DAYS.map(d => (
+          <button 
+            key={d.key} 
+            onClick={() => setActiveTab(d.key)}
+            style={{
+              padding: "10px 18px",
+              borderRadius: "8px",
+              border: activeTab === d.key ? "1px solid #e50914" : "1px solid rgba(255,255,255,0.1)",
+              background: activeTab === d.key ? "rgba(229,9,20,0.1)" : "rgba(255,255,255,0.03)",
+              color: activeTab === d.key ? "#ff6b6b" : "white",
+              fontWeight: 600,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              transition: "all 0.2s"
+            }}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+
       {form && (
         <div className="adm-modal-overlay" onClick={closeForm}>
           <form className="adm-modal adm-modal-wide" onClick={e=>e.stopPropagation()} onSubmit={save}
             style={{maxHeight:"90vh",overflowY:"auto"}}>
             <div className="adm-modal-header">
-              <h3>{form._editIds?.length ? "Edit Programme" : "Add Programme"}</h3>
+              <h3>{form.id ? "Edit Programme Slot" : "Add New Programme"}</h3>
               <button type="button" onClick={closeForm}><X size={18}/></button>
             </div>
 
@@ -260,88 +280,101 @@ export default function AdminSchedule() {
                 placeholder="Short description"/>
             </label>
 
-            {/* Every Day toggle */}
-            <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,padding:14}}>
-              <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:form.daily?14:0}}>
-                <div style={{width:40,height:22,borderRadius:11,position:"relative",
-                  background:form.daily?"#e50914":"rgba(255,255,255,.15)",transition:"background .2s",flexShrink:0}}
-                  onClick={()=>setForm(f=>({...f,daily:!f.daily}))}>
-                  <div style={{position:"absolute",top:2,left:form.daily?20:2,width:18,height:18,
-                    borderRadius:"50%",background:"white",transition:"left .2s"}}/>
-                </div>
-                <span style={{fontWeight:700,color:form.daily?"#ff6b6b":"rgba(255,255,255,.6)",fontSize:".88rem"}}>
-                  Airs Every Day (same schedule daily)
-                </span>
-              </label>
-
-              {form.daily && (
-                <div style={{marginLeft:50}}>
-                  <TimeRow
+            {form.id ? (
+              // EDIT MODE UI
+              <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,padding:14,marginBottom:15}}>
+                 <div style={{fontWeight:600, marginBottom:10, color:"rgba(255,255,255,0.6)"}}>Time Slot Details</div>
+                 <TimeRow
                     label="Time:"
-                    startVal={form.dailyStart}
-                    endVal={form.dailyEnd}
-                    onStartChange={v=>setForm(f=>({...f,dailyStart:v}))}
-                    onEndChange={v=>setForm(f=>({...f,dailyEnd:v}))}
+                    startVal={form.editStart}
+                    endVal={form.editEnd}
+                    onStartChange={v=>setForm(f=>({...f,editStart:v}))}
+                    onEndChange={v=>setForm(f=>({...f,editEnd:v}))}
                   />
-                </div>
-              )}
-            </div>
-
-            {/* Per-day slots */}
-            {!form.daily && (
-              <div>
-                <div style={{fontSize:".78rem",fontWeight:600,color:"rgba(255,255,255,.5)",
-                  textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>
-                  Select Days &amp; Set Start / End Times
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {WEEK_DAYS.map(d => {
-                    const slot = form.daySlots[d.key];
-                    return (
-                      <div key={d.key} style={{
-                        padding:"10px 14px",borderRadius:10,
-                        border:`1px solid ${slot.enabled?"rgba(229,9,20,.3)":"rgba(255,255,255,.07)"}`,
-                        background:slot.enabled?"rgba(229,9,20,.05)":"rgba(255,255,255,.02)",
-                        transition:"all .15s",
-                      }}>
-                        <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-                          {/* Checkbox */}
-                          <label style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",minWidth:110}}>
-                            <div style={{width:18,height:18,borderRadius:4,flexShrink:0,
-                              border:`2px solid ${slot.enabled?"#e50914":"rgba(255,255,255,.2)"}`,
-                              background:slot.enabled?"#e50914":"transparent",
-                              display:"flex",alignItems:"center",justifyContent:"center"}}
-                              onClick={()=>setSlot(d.key,"enabled",!slot.enabled)}>
-                              {slot.enabled&&<span style={{color:"white",fontSize:11,fontWeight:900}}>✓</span>}
-                            </div>
-                            <span style={{fontWeight:700,fontSize:".85rem",
-                              color:slot.enabled?"white":"rgba(255,255,255,.4)"}}>
-                              {d.label}
-                            </span>
-                          </label>
-
-                          {/* Time inputs */}
-                          <TimeRow
-                            label=""
-                            startVal={slot.start}
-                            endVal={slot.end}
-                            onStartChange={v=>setSlot(d.key,"start",v)}
-                            onEndChange={v=>setSlot(d.key,"end",v)}
-                            disabled={!slot.enabled}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                  {(form.originalDays === "daily" || form.originalDays.split(",").length > 1) && (
+                    <div style={{marginTop:12, fontSize:"0.85rem", color:"#ff9800", display:"flex", gap:6, alignItems:"flex-start"}}>
+                      <AlertTriangle size={14} style={{flexShrink:0, marginTop:2}}/>
+                      <div>This is a legacy multi-day series. Editing this will modify it across all its days. To make it independent, please delete it and recreate it using the new system.</div>
+                    </div>
+                  )}
               </div>
-            )}
+            ) : (
+              // CREATE MODE UI
+              <>
+                <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:10,padding:14, marginBottom:15}}>
+                  <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:form.daily?14:0}}>
+                    <div style={{width:40,height:22,borderRadius:11,position:"relative",
+                      background:form.daily?"#e50914":"rgba(255,255,255,.15)",transition:"background .2s",flexShrink:0}}
+                      onClick={()=>setForm(f=>({...f,daily:!f.daily}))}>
+                      <div style={{position:"absolute",top:2,left:form.daily?20:2,width:18,height:18,
+                        borderRadius:"50%",background:"white",transition:"left .2s"}}/>
+                    </div>
+                    <span style={{fontWeight:700,color:form.daily?"#ff6b6b":"rgba(255,255,255,.6)",fontSize:".88rem"}}>
+                      Airs Every Day (creates 7 independent slots)
+                    </span>
+                  </label>
 
-            <label>Week Notes (optional)
-              <input type="text" value={form.week_notes}
-                onChange={e=>setForm(f=>({...f,week_notes:e.target.value}))}
-                maxLength={200} placeholder='e.g. "Live Monday to Friday"'/>
-            </label>
+                  {form.daily && (
+                    <div style={{marginLeft:50}}>
+                      <TimeRow
+                        label="Time:"
+                        startVal={form.dailyStart}
+                        endVal={form.dailyEnd}
+                        onStartChange={v=>setForm(f=>({...f,dailyStart:v}))}
+                        onEndChange={v=>setForm(f=>({...f,dailyEnd:v}))}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {!form.daily && (
+                  <div style={{marginBottom:15}}>
+                    <div style={{fontSize:".78rem",fontWeight:600,color:"rgba(255,255,255,.5)",
+                      textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>
+                      Select Days &amp; Set Start / End Times
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {WEEK_DAYS.map(d => {
+                        const slot = form.daySlots[d.key];
+                        return (
+                          <div key={d.key} style={{
+                            padding:"10px 14px",borderRadius:10,
+                            border:`1px solid ${slot.enabled?"rgba(229,9,20,.3)":"rgba(255,255,255,.07)"}`,
+                            background:slot.enabled?"rgba(229,9,20,.05)":"rgba(255,255,255,.02)",
+                            transition:"all .15s",
+                          }}>
+                            <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                              <label style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",minWidth:110}}>
+                                <div style={{width:18,height:18,borderRadius:4,flexShrink:0,
+                                  border:`2px solid ${slot.enabled?"#e50914":"rgba(255,255,255,.2)"}`,
+                                  background:slot.enabled?"#e50914":"transparent",
+                                  display:"flex",alignItems:"center",justifyContent:"center"}}
+                                  onClick={()=>setSlot(d.key,"enabled",!slot.enabled)}>
+                                  {slot.enabled&&<span style={{color:"white",fontSize:11,fontWeight:900}}>✓</span>}
+                                </div>
+                                <span style={{fontWeight:700,fontSize:".85rem",
+                                  color:slot.enabled?"white":"rgba(255,255,255,.4)"}}>
+                                  {d.label}
+                                </span>
+                              </label>
+
+                              <TimeRow
+                                label=""
+                                startVal={slot.start}
+                                endVal={slot.end}
+                                onStartChange={v=>setSlot(d.key,"start",v)}
+                                onEndChange={v=>setSlot(d.key,"end",v)}
+                                disabled={!slot.enabled}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
             <ImageUpload
               label="Thumbnail (optional)"
@@ -365,45 +398,85 @@ export default function AdminSchedule() {
         </div>
       )}
 
-      {/* Table */}
+      {/* List */}
       {loading ? <div className="adm-loader">Loading...</div> : (
-        <div className="adm-table-wrap">
-          <table className="adm-table">
-            <thead><tr><th>Programme</th><th>Schedule</th><th>Description</th><th></th></tr></thead>
-            <tbody>
-              {Object.entries(grouped).map(([title, rows]) => {
-                const isDaily = rows.some(r=>(r.days||r.day_of_week||"")===("daily"));
+        <div className="adm-timeline">
+          {!scheduleData[activeTab] || scheduleData[activeTab].length === 0 ? (
+            <div style={{padding:40, textAlign:"center", background:"rgba(255,255,255,0.02)", borderRadius:10, border:"1px dashed rgba(255,255,255,0.1)"}}>
+              <p style={{color:"rgba(255,255,255,0.4)", fontSize:"1.1rem", marginBottom:15}}>No programs scheduled for {WEEK_DAYS.find(d=>d.key===activeTab)?.label}.</p>
+              <button className="adm-btn-primary" onClick={openNew}><Plus size={16}/> Add Programme</button>
+            </div>
+          ) : (
+            <div style={{display:"flex", flexDirection:"column", gap:10}}>
+              {scheduleData[activeTab].map((row, i) => {
+                const nextRow = scheduleData[activeTab][i + 1];
+                
+                // Calculate display end time for legacy rows missing end_time
+                let displayEnd = row.end_time;
+                if (!displayEnd && row.duration_min) {
+                  const parts = (row.air_time || "00:00").split(":").map(Number);
+                  const endMins = (parts[0]*60 + parts[1]) + row.duration_min;
+                  displayEnd = String(Math.floor(endMins/60)).padStart(2,"0") + ":" + String(endMins%60).padStart(2,"0");
+                }
+
+                let gapMins = 0;
+                if (nextRow) {
+                  gapMins = toMin(nextRow.air_time) - toMin(displayEnd);
+                }
+
                 return (
-                  <tr key={title}>
-                    <td className="adm-bold">{title}</td>
-                    <td>
-                      {isDaily ? (
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                          <span className="adm-badge green">Every Day</span>
-                          <span className="adm-badge">{fmtTime(rows[0]?.air_time)} — {fmtTime(rows[0]?.end_time)}</span>
-                        </div>
-                      ) : (
-                        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                          {rows.map(r=>(
-                            <span key={r.id} className="adm-badge blue" style={{fontSize:".65rem"}}>
-                              {fmtDayKey(r.day_of_week)} {fmtTime(r.air_time)}–{fmtTime(r.end_time)}
-                            </span>
-                          ))}
+                  <React.Fragment key={row.id}>
+                    <div style={{
+                      display:"flex", alignItems:"center", gap:20, padding:"16px",
+                      background:"rgba(255,255,255,0.03)", borderRadius:10, border:"1px solid rgba(255,255,255,0.05)",
+                      position:"relative"
+                    }}>
+                      {/* Left: Time Block */}
+                      <div style={{minWidth:140, borderRight:"1px solid rgba(255,255,255,0.1)", paddingRight:15}}>
+                        <div style={{fontSize:"1.2rem", fontWeight:700, color:"#e50914"}}>{fmtTime(row.air_time)}</div>
+                        <div style={{fontSize:"0.85rem", color:"rgba(255,255,255,0.5)", marginTop:4}}>to {fmtTime(displayEnd)}</div>
+                        <div style={{fontSize:"0.75rem", color:"rgba(255,255,255,0.25)", marginTop:6}}>{row.duration_min} mins</div>
+                      </div>
+                      
+                      {/* Thumbnail */}
+                      {row.thumbnail && (
+                        <div style={{width:80, height:60, borderRadius:6, overflow:"hidden", flexShrink:0}}>
+                          <img src={row.thumbnail} alt="" style={{width:"100%", height:"100%", objectFit:"cover"}} />
                         </div>
                       )}
-                    </td>
-                    <td className="adm-muted adm-truncate" style={{maxWidth:200}}>{rows[0]?.description}</td>
-                    <td>
-                      <div className="adm-row-actions">
-                        <button className="adm-icon-btn" onClick={()=>openEdit(rows[0])} title="Edit"><Pencil size={14}/></button>
-                        <button className="adm-icon-btn danger" onClick={()=>removeGroup(title)} title="Delete all"><Trash2 size={14}/></button>
+
+                      {/* Info */}
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:"1.15rem", fontWeight:600}}>{row.title}</div>
+                        <div style={{fontSize:"0.9rem", color:"rgba(255,255,255,0.5)", marginTop:6}}>{row.description}</div>
+                        {(row.days==="daily" || row.day_of_week==="daily") && (
+                          <span className="adm-badge green" style={{marginTop:8, display:"inline-block", fontSize:"0.65rem"}}>Legacy Daily Series</span>
+                        )}
                       </div>
-                    </td>
-                  </tr>
+
+                      {/* Actions */}
+                      <div style={{display:"flex", gap:8}}>
+                        <button className="adm-icon-btn" onClick={() => openEdit(row)} title="Edit Slot"><Pencil size={16}/></button>
+                        <button className="adm-icon-btn danger" onClick={() => removeSlot(row.id)} title="Delete Slot"><Trash2 size={16}/></button>
+                      </div>
+                    </div>
+
+                    {/* Show gap warning if there is a gap or overlap */}
+                    {gapMins > 0 && (
+                      <div style={{textAlign:"center", color:"rgba(255,255,255,0.3)", fontSize:"0.8rem", padding:"4px 0"}}>
+                        ↓ {gapMins} minutes gap ↓
+                      </div>
+                    )}
+                    {gapMins < 0 && (
+                      <div style={{textAlign:"center", color:"#e50914", fontSize:"0.8rem", padding:"4px 0", fontWeight:600}}>
+                        ⚠️ OVERLAP DETECTED ({Math.abs(gapMins)} mins) ⚠️
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
       )}
     </div>
