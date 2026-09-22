@@ -7,8 +7,8 @@ import { requireStaff } from "../middleware/auth.js";
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 const router     = Router();
-// Server .htaccess maps /uploads/* → public/uploads/* so save there by default
-const uploadRoot = process.env.UPLOAD_DIR || path.join(__dirname, "../../public/uploads");
+// Save files directly to the root 'uploads' folder so they match the /uploads/ URL perfectly
+const uploadRoot = process.env.UPLOAD_DIR || path.join(__dirname, "../../uploads");
 
 // ── File size limits ──────────────────────────────────────────
 const IMAGE_LIMIT = 10  * 1024 * 1024;  // 10 MB
