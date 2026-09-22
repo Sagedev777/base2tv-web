@@ -1,4 +1,4 @@
-﻿import mysql from "mysql2/promise";
+import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
 // .env.local takes priority (local dev). .env used only if .env.local absent (production).
@@ -58,6 +58,29 @@ export async function ensureAdDescriptionColumn() {
   } catch (error) {
     if (/duplicate column|already exists/i.test(error.message)) return true;
     console.error("  Could not verify ads.description column:", error.message);
+    return false;
+  }
+}
+
+export async function ensureNewsCategoriesTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS news_categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE
+      )
+    `);
+    
+    const [rows] = await pool.query("SELECT COUNT(*) as count FROM news_categories");
+    if (rows[0].count === 0) {
+      const defaultCategories = ['LOCAL NEWS', 'GLOBAL AFFAIRS', 'SPORTS', 'ENTERTAINMENT', 'AGRI-TECH', 'EXCLUSIVE INTERVIEW', 'REGIONAL AFFAIRS'];
+      const values = defaultCategories.map(c => `('${c}')`).join(", ");
+      await pool.query(`INSERT INTO news_categories (name) VALUES ${values}`);
+      console.log("  Seeded news_categories table with defaults.");
+    }
+    return true;
+  } catch (error) {
+    console.error("  Could not initialize news_categories table:", error.message);
     return false;
   }
 }

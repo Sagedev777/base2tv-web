@@ -1,11 +1,11 @@
-﻿import express    from "express";
+import express    from "express";
 import cors       from "cors";
 import dotenv     from "dotenv";
 import rateLimit  from "express-rate-limit";
 import path       from "path";
 import { fileURLToPath } from "url";
 
-import { getDbConfigStatus, ensureAdDescriptionColumn } from "./db.js";
+import { getDbConfigStatus, ensureAdDescriptionColumn, ensureNewsCategoriesTable } from "./db.js";
 
 import authRoutes      from "./routes/auth.js";
 import scheduleRoutes  from "./routes/schedule.js";
@@ -20,6 +20,7 @@ import uploadRoutes    from "./routes/upload.js";
 import adsRoutes       from "./routes/ads.js";
 import advertiseRoutes from "./routes/advertise.js";
 import careersRoutes   from "./routes/careers.js";
+import categoriesRoutes from "./routes/categories.js";
 
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: ".env", override: true });
@@ -93,6 +94,7 @@ app.use("/api/upload",    uploadRoutes);
 app.use("/api/ads",       adsRoutes);
 app.use("/api/advertise", advertiseRoutes);
 app.use("/api/careers",   careersRoutes);
+app.use("/api/categories", categoriesRoutes);
 
 // ── Health ────────────────────────────────────────────────────
 app.get("/api",        (req, res) => res.json({ name: "Base2 TV API", status: "running", version: "1.0.0" }));
@@ -109,6 +111,7 @@ app.get("/api/debug/db", (req, res) => {
 // ── Start after required schema migrations complete ──────────
 const startServer = async () => {
   const schemaReady = await ensureAdDescriptionColumn();
+  await ensureNewsCategoriesTable();
   if (!schemaReady) {
     console.error("  Server startup stopped: ads.description is unavailable.");
     process.exitCode = 1;

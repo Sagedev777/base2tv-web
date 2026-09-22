@@ -1,10 +1,9 @@
-﻿import ImageUpload from '../ImageUpload.jsx';
+import ImageUpload from '../ImageUpload.jsx';
 import React, { useState, useEffect } from 'react';
-import { adminAPI } from '../../services/api';
+import { adminAPI, categoriesAPI } from '../../services/api';
 import { Plus, Pencil, Trash2, Save, X, Eye, EyeOff } from 'lucide-react';
 
 const SCOPES = ['LOCAL', 'GLOBAL'];
-const CATS   = ['LOCAL NEWS','GLOBAL AFFAIRS','SPORTS','ENTERTAINMENT','AGRI-TECH','EXCLUSIVE INTERVIEW','REGIONAL AFFAIRS'];
 const EMPTY  = { title:'', excerpt:'', body:'', category:'LOCAL NEWS', scope:'LOCAL', author:'Base2 TV', thumbnail:'', color:'', is_published:1 };
 
 export default function AdminNews() {
@@ -15,6 +14,7 @@ export default function AdminNews() {
   const [form,    setForm]    = useState(null);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState('');
+  const [categories, setCategories] = useState([]);
   const LIMIT = 15;
 
   const load = async (off = offset) => {
@@ -26,7 +26,17 @@ export default function AdminNews() {
     finally { setLoading(false); }
   };
 
+  const loadCategories = async () => {
+    try {
+      const data = await categoriesAPI.getAll();
+      setCategories(data.map(c => c.name));
+    } catch (e) {
+      console.error("Failed to load categories", e);
+    }
+  };
+
   useEffect(() => { load(); }, [offset]);
+  useEffect(() => { loadCategories(); }, []);
 
   const openNew  = ()    => setForm({ ...EMPTY });
   const openEdit = (row) => setForm({ ...row });
@@ -80,7 +90,7 @@ export default function AdminNews() {
             <div className="adm-form-2col">
               <label>Category
                 <select value={form.category} onChange={e => set('category', e.target.value)}>
-                  {CATS.map(c => <option key={c}>{c}</option>)}
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </label>
               <label>Scope

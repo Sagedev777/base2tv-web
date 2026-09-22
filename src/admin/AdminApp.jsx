@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authAPI, getToken, getUser, setToken, setUser, removeToken, removeUser } from '../services/api';
 import AdminSchedule  from './pages/AdminSchedule';
 import AdminNews      from './pages/AdminNews';
@@ -11,6 +11,7 @@ import AdminSettings  from './pages/AdminSettings';
 import AdminAds       from './pages/AdminAds';
 import AdminCareers   from './pages/AdminCareers';
 import AdminAdvertise from './pages/AdminAdvertise';
+import AdminCategories from './pages/AdminCategories';
 import './admin.css';
 
 import {
@@ -27,6 +28,7 @@ const NAV = [
   { key: 'chatlogs',  label: 'Chat Logs',    icon: MessageSquare },
   { key: 'users',     label: 'Users',        icon: Users        },
   { key: 'settings',  label: 'Site Labels',   icon: Settings     },
+  { key: 'categories', label: 'News Categories', icon: Newspaper },
   { key: 'ads',       label: 'Adverts',       icon: LayoutDashboard },
   { key: 'careers',   label: 'Careers',       icon: Users        },
   { key: 'advertise', label: 'Ad Enquiries',  icon: Mail         },
@@ -105,6 +107,7 @@ export default function AdminApp() {
     users:    AdminUsers,
     settings:  AdminSettings,
     chatlogs: AdminChatLogs,
+    categories: AdminCategories,
     ads:       AdminAds,
     careers:   AdminCareers,
     advertise: AdminAdvertise,

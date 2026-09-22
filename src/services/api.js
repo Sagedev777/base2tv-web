@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  API Service — Express/Node backend on port 5000
 // ============================================================
 const BASE = import.meta.env.VITE_API_URL || "/api";
@@ -132,6 +132,12 @@ export const adminAPI = {
     markRead: (id) => put(`contact/${id}/read`, {}),
     remove:   (id) => del(`contact/${id}`),
   },
+};
+
+export const categoriesAPI = {
+  getAll: () => get("categories"),
+  create: (name) => post("categories", { name }),
+  remove: (id) => del(`categories/${id}`),
 };
 // ════════════════════════════════════════════════════════════
 //  FILE UPLOAD  (multipart/form-data — NOT JSON)
