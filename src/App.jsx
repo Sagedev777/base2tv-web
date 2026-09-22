@@ -10,8 +10,8 @@ import Footer          from './components/Footer'
 import AdsBanner       from './components/AdsBanner'
 import AdvertiseSection from './components/AdvertiseSection'
 import CareersSection  from './components/CareersSection'
-
 import AppDownloadBanner from './components/AppDownloadBanner'
+import ArticlePage     from './components/ArticlePage'
 
 function App() {
   const [route, setRoute] = useState(window.location.hash)
@@ -22,6 +22,21 @@ function App() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
+  // ── Article page: #news-123 ──────────────────────────────
+  const newsMatch = route.match(/^#news-(\d+)$/)
+  if (newsMatch) {
+    return (
+      <div className="app-container">
+        <Header />
+        <main className="main-content">
+          <ArticlePage id={newsMatch[1]} />
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  // ── Full news page: #latest-stories ─────────────────────
   if (route === '#latest-stories') {
     return (
       <div className="app-container">
@@ -34,6 +49,7 @@ function App() {
     )
   }
 
+  // ── Homepage ─────────────────────────────────────────────
   return (
     <div className="app-container">
       <Header />
@@ -42,7 +58,7 @@ function App() {
           <div className="player-column">
             <LivePlayer />
           </div>
-            <div className="ads-column">
+          <div className="ads-column">
             <AdsBanner position="sidebar" />
           </div>
         </div>

@@ -1,4 +1,4 @@
-﻿RewriteEngine On
+RewriteEngine On
 
 # ── Proxy API calls to Node.js ────────────────────────────────
 RewriteRule ^api/(.*)$ http://127.0.0.1:5000/api/$1 [P,L]

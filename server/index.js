@@ -29,7 +29,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const app     = express();
-const PORT    = process.env.API_PORT || 5000;
+const PORT    = process.env.PORT || process.env.API_PORT || 5000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbStatus = getDbConfigStatus();
 
@@ -51,6 +51,7 @@ const allowedOrigins = [
   "http://127.0.0.1:5173",
   "https://base2tv.ug",
   "https://www.base2tv.ug",
+  ...(process.env.CORS_ORIGINS || "").split(",").map(origin => origin.trim()).filter(Boolean),
 ];
 app.use(cors({
   origin: (origin, cb) => {
