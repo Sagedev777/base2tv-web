@@ -28,6 +28,7 @@ export default function AdminNews() {
   const [error,      setError]      = useState('');
   const [categories, setCategories] = useState([]);
   const [search,     setSearch]     = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
   const LIMIT = 15;
 
   const load = async (off = offset) => {
@@ -49,9 +50,9 @@ export default function AdminNews() {
   useEffect(() => { load(); }, [offset]);
   useEffect(() => { loadCategories(); }, []);
 
-  const openNew  = () => setForm({ ...EMPTY });
-  const openEdit = (row) => setForm({ ...row });
-  const closeForm = () => { setForm(null); setError(''); };
+  const openNew  = () => { setForm({ ...EMPTY }); setImageUploading(false); };
+  const openEdit = (row) => { setForm({ ...row }); setImageUploading(false); };
+  const closeForm = () => { setForm(null); setError(''); setImageUploading(false); };
 
   const save = async (e) => {
     e.preventDefault(); setSaving(true); setError('');
@@ -161,7 +162,12 @@ export default function AdminNews() {
               <label>Author
                 <input type="text" value={form.author} onChange={e => set('author', e.target.value)} />
               </label>
-              <ImageUpload label="Thumbnail" value={form.thumbnail} onChange={url => set('thumbnail', url)} />
+              <ImageUpload 
+                label="Thumbnail" 
+                value={form.thumbnail} 
+                onChange={url => set('thumbnail', url)} 
+                onUploading={setImageUploading}
+              />
             </div>
 
             <label>Card Gradient (CSS — used when no thumbnail)
@@ -177,8 +183,8 @@ export default function AdminNews() {
 
             <div className="adm-modal-actions">
               <button type="button" className="adm-btn-ghost" onClick={closeForm}>Cancel</button>
-              <button type="submit" className="adm-btn-primary" disabled={saving}>
-                <Save size={15} /> {saving ? 'Saving…' : 'Save Article'}
+              <button type="submit" className="adm-btn-primary" disabled={saving || imageUploading}>
+                <Save size={15} /> {saving ? 'Saving…' : imageUploading ? 'Wait for Upload…' : 'Save Article'}
               </button>
             </div>
           </form>

@@ -8,6 +8,7 @@ export default function ImageUpload({
   label    = "Image",
   accept   = "image/*",
   type     = "image",
+  onUploading,
 }) {
   const [uploading, setUploading] = useState(false);
   const [status,    setStatus]    = useState(null);
@@ -70,6 +71,7 @@ export default function ImageUpload({
     
     // Clear old errors and set loading state
     setUploading(true); setStatus(null); setError("");
+    if (onUploading) onUploading(true);
     
     // Set an immediate local preview
     if (localUrl) URL.revokeObjectURL(localUrl);
@@ -93,6 +95,7 @@ export default function ImageUpload({
       setLocalUrl(""); // Clear preview on error
     } finally {
       setUploading(false);
+      if (onUploading) onUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
